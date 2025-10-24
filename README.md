@@ -1,2 +1,2 @@
 # musical-journey
-Multimedia cataloguing app :)
+### Aplikacja do katalogowania muzyki.
