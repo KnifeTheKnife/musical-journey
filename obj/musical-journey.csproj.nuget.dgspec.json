@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/h/musical-journey/musical-journey/musical-journey.csproj": {}
+    "/home/h/musical-journey/musical-journey.csproj": {}
   },
   "projects": {
-    "/home/h/musical-journey/musical-journey/musical-journey.csproj": {
+    "/home/h/musical-journey/musical-journey.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/h/musical-journey/musical-journey/musical-journey.csproj",
+        "projectUniqueName": "/home/h/musical-journey/musical-journey.csproj",
         "projectName": "musical-journey",
-        "projectPath": "/home/h/musical-journey/musical-journey/musical-journey.csproj",
+        "projectPath": "/home/h/musical-journey/musical-journey.csproj",
         "packagesPath": "/home/h/.nuget/packages/",
-        "outputPath": "/home/h/musical-journey/musical-journey/obj/",
+        "outputPath": "/home/h/musical-journey/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/h/.nuget/NuGet/NuGet.Config"
@@ -59,6 +59,10 @@
             "Avalonia.Fonts.Inter": {
               "target": "Package",
               "version": "[11.3.9, )"
+            },
+            "Avalonia.ReactiveUI": {
+              "target": "Package",
+              "version": "[11.3.8, )"
             },
             "Avalonia.Themes.Fluent": {
               "target": "Package",
