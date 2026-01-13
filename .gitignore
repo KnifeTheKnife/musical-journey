@@ -258,3 +258,11 @@ src/Browser/Avalonia.Browser.Blazor/wwwroot
 src/Browser/Avalonia.Browser/wwwroot
 api/diff
 src/Browser/Avalonia.Browser/staticwebassegi
+# Build outputs
+bin/
+obj/
+cache.db
+# IDE / user files
+.vs/
+*.user
+*.suo
