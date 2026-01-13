@@ -45,4 +45,9 @@ public interface IDb
     /// <param name="AlbumName">Album name string.</param>
     /// <returns>List of Song structs.</returns>
     List<Song> SelectSongsByAlbum(string AlbumName);
+    /// <summary>
+    /// Scrapes metadata and then adds it to the database.
+    /// </summary>
+    /// <param name="SongName">Name of song to be added to the database.</param>
+    void InsertSongWrapper(string SongName);
 }

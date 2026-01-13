@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HarfBuzzSharp;
 using Microsoft.Data.Sqlite;
 using musical_journey.Services.Interfaces;
 
@@ -67,5 +68,11 @@ public class Database : IDb{
         command.Parameters.AddWithValue("@Genre", song.genre);
         command.Parameters.AddWithValue("@DiscNo", song.discNo);
         command.ExecuteNonQuery();
+    }
+    public void InsertSongWrapper(string SongPath)
+    {
+        IGetTags tagServ= new GetTag();
+        Song tmpSong = tagServ.GetTags(SongPath);
+        InsertSong(tmpSong);
     }
 }
