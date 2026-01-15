@@ -10,4 +10,5 @@ public interface IFsRead
     /// <param name="musicPath">Root directory to scan</param>
     /// <returns>List of full file paths to music files, or empty list if none found</returns>
     List<string> GetMusicFiles(string musicPath);
+    List<string> GetSongTitles(List<string> paths);
 }

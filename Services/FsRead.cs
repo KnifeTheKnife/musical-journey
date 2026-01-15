@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using musical_journey.Services.Interfaces;
 
 namespace musical_journey.Services;
@@ -60,5 +59,16 @@ public class FsRead : IFsRead
         }
 
         return musicFiles;
+    }
+    public List<string> GetSongTitles(List<string> paths)
+    {
+        List<string> nameList = new List<string>();
+        foreach(var path in paths)
+        {
+        IGetTags tagServ = new GetTag();
+        Song tmpSong = tagServ.GetTagsByPath(path);
+        nameList.Add(tmpSong.title);
+        }        
+        return nameList;
     }
 }

@@ -10,5 +10,6 @@ public interface IGetTags
     /// </summary>
     /// <param name="Path"></param>
     /// <returns>Song struct.</returns>
-    Song GetTags(string Path);
+    Song GetTagsByPath(string Path);
+
 }
