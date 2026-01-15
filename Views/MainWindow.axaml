@@ -16,5 +16,7 @@
     </Design.DataContext>
 
     <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <!-- Sample button for opening file picker
+    <Button Content="Browse Music Files" Command="{Binding BrowseMusicFilesCommand}" />-->
 
 </Window>
