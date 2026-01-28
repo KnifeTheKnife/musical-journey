@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using musical_journey.Services;
 using musical_journey.Services.Interfaces;
+
 
 namespace musical_journey.ViewModels;
 
@@ -26,9 +28,15 @@ public class MainWindowViewModel : ViewModelBase
     {
         mainWindow = window;
     }
-    
+
+    //button counter
+    public ObservableCollection<string> Albums { get; } = new ObservableCollection<string>();
+    public ObservableCollection<string> AlbumName { get; } = new ObservableCollection<string>();
     private async Task BrowseAndGetMusicFiles()
     {
+        Albums.Clear();
+        AlbumName.Clear();
+
         if (mainWindow?.StorageProvider == null)
             return;
 
@@ -45,11 +53,28 @@ public class MainWindowViewModel : ViewModelBase
         var selectedPath = folders[0].Path.LocalPath;
         
         var musicFiles = await Task.Run(() => fsRead.GetMusicFiles(selectedPath));
-        
+        //stuff to attach to buttons
+        List<string> directories = await Task.Run(() => fsRead.ScanForDirectory(selectedPath));
+        List<string> name = await Task.Run(() => fsRead.DirectoryNames(selectedPath));
+        for(int i=0;  i<directories.Count; i++)
+        {
+            AlbumName.Add(name[i]);
+            Albums.Add(directories[i]);
+            
+             }
+
+
         // TODO: Do something with musicFiles
         System.Diagnostics.Debug.WriteLine($"Found {musicFiles.Count} music files");
     }
-}
+
+    //soon
+    public async Task AlbumFolderFunc()
+    {
+        return;
+    }
+   
+  }
 
 // Simple async command implementation
 public class AsyncCommand : ICommand
