@@ -33,7 +33,20 @@
 			</Grid.ColumnDefinitions>
 
 				<Border Grid.Column="0" Grid.Row="0" Background="DarkViolet" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-						<TextBlock Text="Albumy" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+						<Grid x:Name="AlbumSpace">
+							<ItemsControl ItemsSource="{Binding AlbumName}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<WrapPanel Orientation="Vertical"></WrapPanel>
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<Button Content="{Binding}"  Margin="5"></Button>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</Grid>
 					</Border>
 
 			<Border Grid.Column="1" Grid.Row="0" Background="DarkMagenta" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
