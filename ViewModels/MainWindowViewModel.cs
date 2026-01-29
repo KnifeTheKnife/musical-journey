@@ -94,9 +94,10 @@ public class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand PlayPauseCommand { get; }
-    public ICommand StopCommand { get;}
     public ICommand PlaySongCommand { get; }
+    public ICommand NextCommand { get; }
 
+    public ICommand PreviousCommand { get; }
     public string SelectedSongTitle
     {
         get => _selectedSongTitle;
@@ -430,8 +431,12 @@ public class MainWindowViewModel : ViewModelBase
         
         // Sort songs by track number first, then alphabetically by title if track number is missing
         var sortedSongs = songsList
-            .OrderBy(s => int.TryParse(s.TrackNo, out var trackNum) ? trackNum : int.MaxValue)
-            .ThenBy(s => s.Title)
+            .OrderBy(s => int.TryParse(s.TrackNo, out var trackNum) ? trackNum : int.MaxValue)      var sortedSongs = songsList
+            .Where(s => int.TryParse(s.TrackNo, out _))
+            .OrderBy(s => int.Parse(s.TrackNo))
+            .Concat(songsList
+                .Where(s => !int.TryParse(s.TrackNo, out _))
+                .OrderBy(s => s.Title))
             .ToList();
         
         foreach (var wrapper in sortedSongs)
