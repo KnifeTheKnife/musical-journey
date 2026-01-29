@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using Avalonia.ReactiveUI;
 using ReactiveUI;
+using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
@@ -92,8 +94,28 @@ public class MainWindowViewModel : ViewModelBase
         }  
  
     }
+    private float _playbackPosition;
+    public float PlaybackPosition
+    {
+        get => _playbackPosition;
+        set 
+        { this.RaiseAndSetIfChanged(ref _playbackPosition, value);
+        if (AudioService?.MediaPlayer != null)
+        {
+        if (AudioService.MediaPlayer.IsPlaying || AudioService.MediaPlayer.WillPlay)
+        {
+            // Sprawdzamy czy różnica jest duża, żeby uniknąć zapętlenia przy aktualizacji z VLC
+            if (Math.Abs(AudioService.MediaPlayer.Position - value) > 0.01)
+            {
+                AudioService.MediaPlayer.Position = value;
+            }
+        }
+        }
+        }
+    }
 
     public ICommand PlayPauseCommand { get; }
+    public ICommand StopCommand { get; }
     public ICommand PlaySongCommand { get; }
 
     public string SelectedSongTitle
@@ -146,10 +168,28 @@ public class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        RxApp.MainThreadScheduler = AvaloniaScheduler.Instance;
         fsRead = new FsRead();
         getTags = new GetTag();
         AudioService = new AudioService();
         playlistService = new PlaylistDatabaseService();
+        AudioService.MediaPlayer.EndReached += (s, e) => 
+        {
+            Dispatcher.UIThread.Post(async () => 
+            {
+                Console.WriteLine("[VLC] Koniec utworu. Przełączam...");
+                await PlayNext(); 
+            });
+        };
+
+        AudioService.MediaPlayer.PositionChanged += (s, e) =>
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                _playbackPosition = e.Position;
+                this.RaisePropertyChanged(nameof(PlaybackPosition));
+            });
+        };
         
         BrowseMusicFilesCommand = new AsyncCommand(BrowseAndGetMusicFiles);
         
@@ -174,6 +214,20 @@ public class MainWindowViewModel : ViewModelBase
         {
             AudioService.Play(path);
         });
+        }); 
+
+        StopCommand = new AsyncCommand(async () => 
+        {
+    
+            AudioService.MediaPlayer.Stop();
+            await Dispatcher.UIThread.InvokeAsync(() => 
+            {
+                PlaybackPosition = 0; // To dotyka UI, więc musi być tutaj
+            });
+        });
+
+        NextCommand = new AsyncCommand(async () => await PlayNext());
+        PreviousCommand = new AsyncCommand(async () => await PlayPrevious());
 
         // Playlist commands
         CreatePlaylistCommand = new AsyncCommand<string>(async playlistName =>
