@@ -1,16 +1,26 @@
 using System.Collections.Generic;
 
 namespace musical_journey.Services.Interfaces;
-    public readonly struct Song
+    public struct Song
     {
-        public readonly string title;
-        public readonly string artist;
-        public readonly string album;
-        public readonly string trackNo;
-        public readonly string genre;
-        public readonly string date;
-        public readonly string discNo;
-        public readonly string path;
+        public string title { get; set; }
+        public string artist { get; set; }
+        public string album { get; set; }
+        public string trackNo { get; set; }
+        public string genre { get; set; }
+        public string date { get; set; }
+        public string discNo { get; set; }
+        public string path { get; set; }
+
+        // Properties for Avalonia binding (using PascalCase)
+        public string Title => title ?? "";
+        public string Artist => artist ?? "";
+        public string Album => album ?? "";
+        public string TrackNo => trackNo ?? "";
+        public string Genre => genre ?? "";
+        public string Date => date ?? "";
+        public string DiscNo => discNo ?? "";
+        public string Path => path ?? "";
 
         public Song(string Title, string Artist, string Album, string TrackNo, string Genre, string Date, string DiscNo, string Path)
         {
