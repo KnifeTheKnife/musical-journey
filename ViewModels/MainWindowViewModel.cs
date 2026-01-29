@@ -267,31 +267,18 @@ public class MainWindowViewModel : ViewModelBase
         {
             if (SelectedPlaylist != null)
             {
-                var playlistId = SelectedPlaylist.Id;
                 await Task.Run(() =>
                 {
-                    playlistService.ClearPlaylist(playlistId);
+                    playlistService.ClearPlaylist(SelectedPlaylist.Id);
                 });
                 Dispatcher.UIThread.Post(() =>
                 {
                     SelectedPlaylist.Songs.Clear();
-                    SelectedPlaylistSongDirect = default;
                 });
             }
         });
 
-        this.WhenAnyValue(x => x.Volume).Subscribe(vol =>
-        {
-            AudioService.MediaPlayer.Volume = vol;
-        });
-
-        // Load playlists on initialization
         LoadPlaylists();
-    }
-    
-    public void AttachWindow(Window window)
-    {
-        mainWindow = window;
     }
 
     public ObservableCollection<AlbumFolder> AlbumFolders { get; } = new ObservableCollection<AlbumFolder>();
@@ -439,11 +426,21 @@ public class MainWindowViewModel : ViewModelBase
             var song = await Task.Run(() => getTags.GetTags(file));
             var wrapper = new SongWrapper(song);
             songsList.Add(wrapper);
+        }
+        
+        // Sort songs by track number first, then alphabetically by title if track number is missing
+        var sortedSongs = songsList
+            .OrderBy(s => int.TryParse(s.TrackNo, out var trackNum) ? trackNum : int.MaxValue)
+            .ThenBy(s => s.Title)
+            .ToList();
+        
+        foreach (var wrapper in sortedSongs)
+        {
             Songs.Add(wrapper);
         }
         
         // Group songs by album
-        var groupedByAlbum = songsList
+        var groupedByAlbum = sortedSongs
             .GroupBy(s => string.IsNullOrWhiteSpace(s.Album) ? "[Unknown Album]" : s.Album)
             .OrderBy(g => g.Key);
         
@@ -452,13 +449,12 @@ public class MainWindowViewModel : ViewModelBase
             var group = new AlbumGroup
             {
                 AlbumName = albumGroup.Key,
-                Songs = new ObservableCollection<SongWrapper>(albumGroup.OrderBy(s => int.TryParse(s.TrackNo, out var trackNum) ? trackNum : -1))
+                Songs = new ObservableCollection<SongWrapper>(albumGroup.OrderBy(s => int.TryParse(s.TrackNo, out var trackNum) ? trackNum : int.MaxValue))
             };
             AlbumGroups.Add(group);
         }
         
         System.Diagnostics.Debug.WriteLine($"Loaded {musicFiles.Count} songs from {folderPath}");
-
     }
 
     private void LoadPlaylists()
@@ -472,8 +468,12 @@ public class MainWindowViewModel : ViewModelBase
             Playlists.Add(playlist);
         }
     }
-   
-  }
+
+    public void AttachWindow(Window window)
+    {
+        mainWindow = window;
+    }
+}
 
 
 public class AsyncCommand : ICommand
