@@ -452,7 +452,7 @@ public class MainWindowViewModel : ViewModelBase
             var group = new AlbumGroup
             {
                 AlbumName = albumGroup.Key,
-                Songs = new ObservableCollection<SongWrapper>(albumGroup.OrderBy(s => s.TrackNo))
+                Songs = new ObservableCollection<SongWrapper>(albumGroup.OrderBy(s => int.TryParse(s.TrackNo, out var trackNum) ? trackNum : -1))
             };
             AlbumGroups.Add(group);
         }

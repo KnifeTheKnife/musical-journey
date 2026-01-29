@@ -38,6 +38,7 @@
 			</Grid.ColumnDefinitions>
 
 				<Border Grid.Column="0" Grid.Row="0" Background="DarkViolet" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+					<ScrollViewer>
 						<Grid x:Name="AlbumSpace">
 							<ItemsControl ItemsSource="{Binding AlbumFolders}">
 								<ItemsControl.ItemsPanel>
@@ -52,9 +53,11 @@
 								</ItemsControl.ItemTemplate>
 							</ItemsControl>
 						</Grid>
-					</Border>
+					</ScrollViewer>
+				</Border>
 
 			<Border Grid.Column="1" Grid.Row="0" Background="DarkMagenta" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+				<ScrollViewer>
 				<Grid RowDefinitions="Auto,*">
 					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5" Spacing="5">
 						<TextBlock Text="Songs" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
@@ -79,6 +82,7 @@
 						</ListBox.ItemTemplate>
 					</ListBox>
 				</Grid>
+				</ScrollViewer>
 			</Border>
 
 			<!-- Playlists -->
