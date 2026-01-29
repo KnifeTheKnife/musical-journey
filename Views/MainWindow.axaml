@@ -54,13 +54,21 @@
 					</Border>
 
 			<Border Grid.Column="1" Grid.Row="0" Background="DarkMagenta" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-				<ListBox ItemsSource="{Binding Songs}" SelectedItem="{Binding SelectedSong}">
+				<ListBox ItemsSource="{Binding AlbumGroups}">
 					<ListBox.ItemTemplate>
 						<DataTemplate>
-							<StackPanel Margin="5">
-								<TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-								<TextBlock Text="{Binding Artist}" FontSize="10" Opacity="0.7"/>
-							</StackPanel>
+							<Expander Header="{Binding AlbumName}" Margin="5,2">
+								<ListBox ItemsSource="{Binding Songs}" SelectedItem="{Binding $parent[Window].DataContext.SelectedSong, Mode=TwoWay}">
+									<ListBox.ItemTemplate>
+										<DataTemplate>
+											<StackPanel Margin="15,3,5,3">
+												<TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+												<TextBlock Text="{Binding Artist}" FontSize="10" Opacity="0.7"/>
+											</StackPanel>
+										</DataTemplate>
+									</ListBox.ItemTemplate>
+								</ListBox>
+							</Expander>
 						</DataTemplate>
 					</ListBox.ItemTemplate>
 				</ListBox>
