@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using musical_journey.Services;
 using musical_journey.Services.Interfaces;
 
@@ -55,6 +56,7 @@ public class MainWindowViewModel : ViewModelBase
 {
     private readonly IFsRead fsRead;
     private readonly IGetTags getTags;
+    private readonly IPlaylistService playlistService;
     private Window? mainWindow;
     private string _selectedSongTitle = "";
     private string _selectedSongArtist = "";
@@ -66,7 +68,13 @@ public class MainWindowViewModel : ViewModelBase
     private string _selectedSongPath = "";
     
     public ICommand BrowseMusicFilesCommand { get; }
-    public IAudioService AudioService { get; } 
+    public IAudioService AudioService { get; }
+    public ICommand CreatePlaylistCommand { get; }
+    public ICommand DeletePlaylistCommand { get; }
+    public ICommand AddSongToPlaylistCommand { get; }
+    public ICommand RemoveSongFromPlaylistCommand { get; }
+    public ICommand AddAlbumToPlaylistCommand { get; }
+    public ICommand ClearPlaylistCommand { get; } 
 
     public string Greeting => "Musical Journey";
     
@@ -142,8 +150,10 @@ public class MainWindowViewModel : ViewModelBase
         fsRead = new FsRead();
         getTags = new GetTag();
         AudioService = new AudioService();
+        playlistService = new PlaylistDatabaseService();
+        
         BrowseMusicFilesCommand = new AsyncCommand(BrowseAndGetMusicFiles);
-        //AudioService.Play("/home/marcy/Documents/musical-journey/taud.mp3");
+        
         PlayPauseCommand = ReactiveCommand.Create(() =>
         {
             if (AudioService.MediaPlayer.IsPlaying)
@@ -160,15 +170,123 @@ public class MainWindowViewModel : ViewModelBase
         {
             AudioService.Stop();
         });
+        
         PlaySongCommand = ReactiveCommand.Create<string>(path =>
         {
             AudioService.Play(path);
+        });
+
+        // Playlist commands
+        CreatePlaylistCommand = new AsyncCommand<string>(async playlistName =>
+        {
+            if (!string.IsNullOrWhiteSpace(playlistName))
+            {
+                var playlist = await Task.Run(() => playlistService.CreatePlaylist(playlistName));
+                Dispatcher.UIThread.Post(() =>
+                {
+                    Playlists.Add(playlist);
+                    SelectedPlaylist = playlist;
+                });
+            }
+        });
+
+        DeletePlaylistCommand = new AsyncCommand(async () =>
+        {
+            if (SelectedPlaylist != null)
+            {
+                var playlistIdToDelete = SelectedPlaylist.Id;
+                
+                // Execute delete on background thread
+                await Task.Run(() =>
+                {
+                    playlistService.DeletePlaylist(playlistIdToDelete);
+                });
+                
+                // Update UI on UI thread
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var playlistToRemove = Playlists.FirstOrDefault(p => p.Id == playlistIdToDelete);
+                    if (playlistToRemove != null)
+                    {
+                        Playlists.Remove(playlistToRemove);
+                        SelectedPlaylist = Playlists.FirstOrDefault();
+                    }
+                });
+            }
+        });
+
+        AddSongToPlaylistCommand = new AsyncCommand(async () =>
+        {
+            if (SelectedPlaylist != null && SelectedSong != null)
+            {
+                var song = SelectedSong.GetSong();
+                await Task.Run(() =>
+                {
+                    playlistService.AddSongToPlaylist(SelectedPlaylist.Id, song);
+                });
+            }
+        });
+
+        RemoveSongFromPlaylistCommand = new AsyncCommand(async () =>
+        {
+            if (SelectedPlaylist != null && !string.IsNullOrEmpty(SelectedPlaylistSongDirect.Path))
+            {
+                var songPath = SelectedPlaylistSongDirect.Path;
+                await Task.Run(() =>
+                {
+                    playlistService.RemoveSongFromPlaylist(SelectedPlaylist.Id, songPath);
+                });
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var songToRemove = SelectedPlaylist.Songs.FirstOrDefault(s => s.Path == songPath);
+                    if (songToRemove.Path != null)
+                    {
+                        SelectedPlaylist.Songs.Remove(songToRemove);
+                        SelectedPlaylistSongDirect = default;
+                    }
+                });
+            }
+        });
+
+        AddAlbumToPlaylistCommand = new AsyncCommand(async () =>
+        {
+            if (SelectedPlaylist != null && SelectedAlbumGroup != null)
+            {
+                var songs = SelectedAlbumGroup.Songs.Select(s => s.GetSong()).ToList();
+                await Task.Run(() =>
+                {
+                    foreach (var song in songs)
+                    {
+                        playlistService.AddSongToPlaylist(SelectedPlaylist.Id, song);
+                    }
+                });
+            }
+        });
+
+        ClearPlaylistCommand = new AsyncCommand(async () =>
+        {
+            if (SelectedPlaylist != null)
+            {
+                var playlistId = SelectedPlaylist.Id;
+                await Task.Run(() =>
+                {
+                    playlistService.ClearPlaylist(playlistId);
+                });
+                Dispatcher.UIThread.Post(() =>
+                {
+                    SelectedPlaylist.Songs.Clear();
+                    SelectedPlaylistSongDirect = default;
+                });
+            }
         });
 
         this.WhenAnyValue(x => x.Volume).Subscribe(vol =>
         {
             AudioService.MediaPlayer.Volume = vol;
         });
+
+        // Load playlists on initialization
+        LoadPlaylists();
     }
     
     public void AttachWindow(Window window)
@@ -181,6 +299,48 @@ public class MainWindowViewModel : ViewModelBase
     
     // Legacy Songs collection kept for backward compatibility, if needed
     public ObservableCollection<SongWrapper> Songs { get; } = new ObservableCollection<SongWrapper>();
+    
+    // Playlist collections
+    public ObservableCollection<Playlist> Playlists { get; } = new ObservableCollection<Playlist>();
+    
+    private Playlist? _selectedPlaylist;
+    public Playlist? SelectedPlaylist
+    {
+        get => _selectedPlaylist;
+        set 
+        { 
+            this.RaiseAndSetIfChanged(ref _selectedPlaylist, value);
+            if (value != null)
+            {
+                Console.WriteLine($"[DEBUG] Selected playlist: {value.Name}, Songs in collection: {value.Songs.Count}");
+                foreach (var song in value.Songs)
+                {
+                    Console.WriteLine($"[DEBUG]   - {song.Title} by {song.Artist}");
+                }
+            }
+        }
+    }
+    
+    private SongWrapper? _selectedPlaylistSong;
+    public SongWrapper? SelectedPlaylistSong
+    {
+        get => _selectedPlaylistSong;
+        set => this.RaiseAndSetIfChanged(ref _selectedPlaylistSong, value);
+    }
+
+    private Song _selectedPlaylistSongDirect = default;
+    public Song SelectedPlaylistSongDirect
+    {
+        get => _selectedPlaylistSongDirect;
+        set => this.RaiseAndSetIfChanged(ref _selectedPlaylistSongDirect, value);
+    }
+
+    private AlbumGroup? _selectedAlbumGroup;
+    public AlbumGroup? SelectedAlbumGroup
+    {
+        get => _selectedAlbumGroup;
+        set => this.RaiseAndSetIfChanged(ref _selectedAlbumGroup, value);
+    }
     
     private SongWrapper? _selectedSong;
     public SongWrapper? SelectedSong
@@ -300,6 +460,18 @@ public class MainWindowViewModel : ViewModelBase
         System.Diagnostics.Debug.WriteLine($"Loaded {musicFiles.Count} songs from {folderPath}");
 
     }
+
+    private void LoadPlaylists()
+    {
+        Playlists.Clear();
+        var allPlaylists = playlistService.GetAllPlaylists();
+        Console.WriteLine($"[DEBUG] Loading {allPlaylists.Count} playlists");
+        foreach (var playlist in allPlaylists)
+        {
+            Console.WriteLine($"[DEBUG] Loading playlist: {playlist.Name}, Songs count: {playlist.Songs.Count}");
+            Playlists.Add(playlist);
+        }
+    }
    
   }
 
@@ -327,6 +499,45 @@ public class AsyncCommand : ICommand
         try
         {
             await execute();
+        }
+        finally
+        {
+            isExecuting = false;
+            OnCanExecuteChanged();
+        }
+    }
+
+    public event EventHandler? CanExecuteChanged;
+
+    protected virtual void OnCanExecuteChanged()
+    {
+        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+}
+
+public class AsyncCommand<T> : ICommand
+{
+    private readonly Func<T?, Task> execute;
+    private bool isExecuting;
+
+    public AsyncCommand(Func<T?, Task> execute)
+    {
+        this.execute = execute;
+    }
+
+    public bool CanExecute(object? parameter) => !isExecuting;
+
+    public async void Execute(object? parameter)
+    {
+        if (isExecuting)
+            return;
+
+        isExecuting = true;
+        OnCanExecuteChanged();
+
+        try
+        {
+            await execute((T?)parameter);
         }
         finally
         {
