@@ -7,8 +7,8 @@ using ReactiveUI;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
-using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.Platform.Storage;
 using musical_journey.Services;
 using musical_journey.Services.Interfaces;
 
@@ -94,9 +94,10 @@ public class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand PlayPauseCommand { get; }
-    public ICommand StopCommand { get;}
     public ICommand PlaySongCommand { get; }
 
+    public ICommand NextCommand { get; }
+    public ICommand PreviousCommand { get; }
     public string SelectedSongTitle
     {
         get => _selectedSongTitle;
@@ -153,28 +154,22 @@ public class MainWindowViewModel : ViewModelBase
         playlistService = new PlaylistDatabaseService();
         
         BrowseMusicFilesCommand = new AsyncCommand(BrowseAndGetMusicFiles);
+        //AudioService.Play("/home/marcy/Documents/mjuzik/taud.mp3");
         
         PlayPauseCommand = ReactiveCommand.Create(() =>
         {
             if (AudioService.MediaPlayer.IsPlaying)
-            {
                 AudioService.MediaPlayer.Pause();
-            }
             else
-            {
                 AudioService.MediaPlayer.Play();
-            }
-        });
-
-        StopCommand = ReactiveCommand.Create(() =>
-        {
-            AudioService.Stop();
         });
         
         PlaySongCommand = ReactiveCommand.Create<string>(path =>
         {
             AudioService.Play(path);
-        });
+        }); 
+        NextCommand = new AsyncCommand(async () => await PlayNext());
+        PreviousCommand = new AsyncCommand(async () => await PlayPrevious());
 
         // Playlist commands
         CreatePlaylistCommand = new AsyncCommand<string>(async playlistName =>
@@ -289,6 +284,45 @@ public class MainWindowViewModel : ViewModelBase
         LoadPlaylists();
     }
     
+    private async Task PlayNext()
+    {
+    Console.WriteLine($"Próba Next. Ilość utworów w Songs: {Songs.Count}");
+    
+    if (Songs.Count == 0) return;
+
+    // Szukamy po ścieżce, bo to najpewniejsza metoda porównania
+    int currentIndex = -1;
+    if (SelectedSong != null)
+    {
+        currentIndex = Songs.ToList().FindIndex(s => s.Path == SelectedSong.Path);
+    }
+
+    Console.WriteLine($"Obecny indeks: {currentIndex}");
+
+    int nextIndex = (currentIndex + 1) % Songs.Count;
+    
+    // Zmiana SelectedSong odpali muzykę przez Twój setter
+    Dispatcher.UIThread.Post(() => {
+        SelectedSong = Songs[nextIndex];
+        Console.WriteLine($"Zmieniono na: {SelectedSong?.Title}");
+    });
+    }
+
+    private async Task PlayPrevious()
+    {
+        // Logic to play the previous song in the list
+        if (SelectedSong == null || Songs.Count == 0)
+            return;
+        int currentIndex = Songs.IndexOf(SelectedSong);
+        if (currentIndex > 0)
+        {
+            SelectedSong = Songs[currentIndex - 1];
+        }
+        else
+        {
+            SelectedSong = Songs[Songs.Count - 1]; // Loop back to the last song
+        }
+    }
     public void AttachWindow(Window window)
     {
         mainWindow = window;
@@ -352,6 +386,11 @@ public class MainWindowViewModel : ViewModelBase
             if (value != null)
             {
                 UpdateSongInfo(value.GetSong());
+
+                if (!string.IsNullOrEmpty(value.Path))
+                {
+                    AudioService.Play(value.Path);
+                }
             }
         }
     }
@@ -426,20 +465,20 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadSongsFromFolder(string folderPath)
+private async Task LoadSongsFromFolder(string folderPath)
     {
         Songs.Clear();
         AlbumGroups.Clear();
         
         var musicFiles = await Task.Run(() => fsRead.GetMusicFiles(folderPath));
-        
         var songsList = new List<SongWrapper>();
+        
         foreach (var file in musicFiles)
         {
             var song = await Task.Run(() => getTags.GetTags(file));
             var wrapper = new SongWrapper(song);
             songsList.Add(wrapper);
-            Songs.Add(wrapper);
+            Dispatcher.UIThread.Post(() => Songs.Add(wrapper));
         }
         
         // Group songs by album
@@ -454,13 +493,11 @@ public class MainWindowViewModel : ViewModelBase
                 AlbumName = albumGroup.Key,
                 Songs = new ObservableCollection<SongWrapper>(albumGroup.OrderBy(s => int.TryParse(s.TrackNo, out var trackNum) ? trackNum : -1))
             };
-            AlbumGroups.Add(group);
+            Dispatcher.UIThread.Post(() => AlbumGroups.Add(group));
         }
         
         System.Diagnostics.Debug.WriteLine($"Loaded {musicFiles.Count} songs from {folderPath}");
-
     }
-
     private void LoadPlaylists()
     {
         Playlists.Clear();
@@ -472,9 +509,6 @@ public class MainWindowViewModel : ViewModelBase
             Playlists.Add(playlist);
         }
     }
-   
-  }
-
 
 public class AsyncCommand : ICommand
 {
@@ -511,9 +545,16 @@ public class AsyncCommand : ICommand
 
     protected virtual void OnCanExecuteChanged()
     {
-        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => OnCanExecuteChanged());
+        }
     }
-}
+}}
 
 public class AsyncCommand<T> : ICommand
 {
