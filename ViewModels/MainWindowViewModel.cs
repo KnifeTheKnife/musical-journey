@@ -44,6 +44,13 @@ public class AlbumFolder
     public ICommand? ClickCommand { get; set; }
 }
 
+// Wrapper for grouping songs by album
+public class AlbumGroup
+{
+    public string AlbumName { get; set; } = "";
+    public ObservableCollection<SongWrapper> Songs { get; set; } = new ObservableCollection<SongWrapper>();
+}
+
 public class MainWindowViewModel : ViewModelBase
 {
     private readonly IFsRead fsRead;
@@ -85,49 +92,49 @@ public class MainWindowViewModel : ViewModelBase
     public string SelectedSongTitle
     {
         get => _selectedSongTitle;
-        set => SetProperty(ref _selectedSongTitle, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongTitle, value);
     }
 
     public string SelectedSongArtist
     {
         get => _selectedSongArtist;
-        set => SetProperty(ref _selectedSongArtist, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongArtist, value);
     }
 
     public string SelectedSongAlbum
     {
         get => _selectedSongAlbum;
-        set => SetProperty(ref _selectedSongAlbum, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongAlbum, value);
     }
 
     public string SelectedSongTrackNo
     {
         get => _selectedSongTrackNo;
-        set => SetProperty(ref _selectedSongTrackNo, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongTrackNo, value);
     }
 
     public string SelectedSongGenre
     {
         get => _selectedSongGenre;
-        set => SetProperty(ref _selectedSongGenre, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongGenre, value);
     }
 
     public string SelectedSongDate
     {
         get => _selectedSongDate;
-        set => SetProperty(ref _selectedSongDate, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongDate, value);
     }
 
     public string SelectedSongDiscNo
     {
         get => _selectedSongDiscNo;
-        set => SetProperty(ref _selectedSongDiscNo, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongDiscNo, value);
     }
 
     public string SelectedSongPath
     {
         get => _selectedSongPath;
-        set => SetProperty(ref _selectedSongPath, value);
+        set => this.RaiseAndSetIfChanged(ref _selectedSongPath, value);
     }
 
     public MainWindowViewModel()
@@ -170,6 +177,9 @@ public class MainWindowViewModel : ViewModelBase
     }
 
     public ObservableCollection<AlbumFolder> AlbumFolders { get; } = new ObservableCollection<AlbumFolder>();
+    public ObservableCollection<AlbumGroup> AlbumGroups { get; } = new ObservableCollection<AlbumGroup>();
+    
+    // Legacy Songs collection kept for backward compatibility, if needed
     public ObservableCollection<SongWrapper> Songs { get; } = new ObservableCollection<SongWrapper>();
     
     private SongWrapper? _selectedSong;
@@ -178,7 +188,8 @@ public class MainWindowViewModel : ViewModelBase
         get => _selectedSong;
         set
         {
-            if (SetProperty(ref _selectedSong, value) && value != null)
+            this.RaiseAndSetIfChanged(ref _selectedSong, value);
+            if (value != null)
             {
                 UpdateSongInfo(value.GetSong());
             }
@@ -258,16 +269,36 @@ public class MainWindowViewModel : ViewModelBase
     private async Task LoadSongsFromFolder(string folderPath)
     {
         Songs.Clear();
+        AlbumGroups.Clear();
         
         var musicFiles = await Task.Run(() => fsRead.GetMusicFiles(folderPath));
         
+        var songsList = new List<SongWrapper>();
         foreach (var file in musicFiles)
         {
             var song = await Task.Run(() => getTags.GetTags(file));
-            Songs.Add(new SongWrapper(song));
+            var wrapper = new SongWrapper(song);
+            songsList.Add(wrapper);
+            Songs.Add(wrapper);
+        }
+        
+        // Group songs by album
+        var groupedByAlbum = songsList
+            .GroupBy(s => string.IsNullOrWhiteSpace(s.Album) ? "[Unknown Album]" : s.Album)
+            .OrderBy(g => g.Key);
+        
+        foreach (var albumGroup in groupedByAlbum)
+        {
+            var group = new AlbumGroup
+            {
+                AlbumName = albumGroup.Key,
+                Songs = new ObservableCollection<SongWrapper>(albumGroup.OrderBy(s => s.TrackNo))
+            };
+            AlbumGroups.Add(group);
         }
         
         System.Diagnostics.Debug.WriteLine($"Loaded {musicFiles.Count} songs from {folderPath}");
+
     }
    
   }
