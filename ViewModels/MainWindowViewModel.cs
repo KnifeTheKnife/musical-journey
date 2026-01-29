@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Reactive;
+using ReactiveUI;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
@@ -17,11 +19,60 @@ public class MainWindowViewModel : ViewModelBase
     private Window? mainWindow;
     
     public ICommand BrowseMusicFilesCommand { get; }
+    public IAudioService AudioService { get; } 
+
+    public string Greeting => "Musical Journey";
+    
+    private int _volume = 100;
+    public int Volume
+    {
+        get => _volume;
+        set
+        {
+            _volume = value;
+            if (AudioService?.MediaPlayer != null)
+            {
+                AudioService.MediaPlayer.Volume = _volume;
+            }
+        }  
+ 
+    }
+
+    public ICommand PlayPauseCommand { get; }
+    public ICommand StopCommand { get;}
+    public ICommand PlaySongCommand { get; }
 
     public MainWindowViewModel()
     {
         fsRead = new FsRead();
+        AudioService = new AudioService();
         BrowseMusicFilesCommand = new AsyncCommand(BrowseAndGetMusicFiles);
+        //AudioService.Play("/home/marcy/Documents/musical-journey/taud.mp3");
+        PlayPauseCommand = ReactiveCommand.Create(() =>
+        {
+            if (AudioService.MediaPlayer.IsPlaying)
+            {
+                AudioService.MediaPlayer.Pause();
+            }
+            else
+            {
+                AudioService.MediaPlayer.Play();
+            }
+        });
+
+        StopCommand = ReactiveCommand.Create(() =>
+        {
+            AudioService.Stop();
+        });
+        PlaySongCommand = ReactiveCommand.Create<string>(path =>
+        {
+            AudioService.Play(path);
+        });
+
+        this.WhenAnyValue(x => x.Volume).Subscribe(vol =>
+        {
+            AudioService.MediaPlayer.Volume = vol;
+        });
     }
     
     public void AttachWindow(Window window)
