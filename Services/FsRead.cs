@@ -1,7 +1,8 @@
+using musical_journey.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using musical_journey.Services.Interfaces;
+using System.Linq;
 
 namespace musical_journey.Services;
 
@@ -36,7 +37,7 @@ public class FsRead : IFsRead
             var files = Directory.GetFiles(path);
             foreach (var file in files)
             {
-                var ext = Path.GetExtension(file);
+                var ext = System.IO.Path.GetExtension(file);
                 if (MusicExtensions.Contains(ext))
                 {
                     musicFiles.Add(file);
@@ -60,15 +61,53 @@ public class FsRead : IFsRead
 
         return musicFiles;
     }
-    public List<string> GetSongTitles(List<string> paths)
+
+    //scan for directories/folder names and return them
+    public List<string> ScanForDirectory(string dirPath)
     {
-        List<string> nameList = new List<string>();
-        foreach(var path in paths)
+        var directories = new List<string>();
+
+        try
         {
-        IGetTags tagServ = new GetTag();
-        Song tmpSong = tagServ.GetTagsByPath(path);
-        nameList.Add(tmpSong.title);
-        }        
-        return nameList;
+            var dir = Directory.GetDirectories(dirPath);
+            foreach(var d in dir)
+            {
+                directories.Add(d);
+            }
+
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Access denied to: {dirPath} - {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error scanning {dirPath}: {ex.Message}");
+        }
+        return directories;
     }
+    public List<string> DirectoryNames(string dirPath)
+    {
+        var directoryNames = new List<string>();
+        try
+        {
+            var dir = Directory.GetDirectories(dirPath);
+            foreach (var d in dir)
+            {
+                string foldername = System.IO.Path.GetFileName(d);
+                directoryNames.Add(foldername);
+            }
+            
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Access denied to: {dirPath} - {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error scanning {dirPath}: {ex.Message}");
+        }
+        return directoryNames;
+    }
+    
 }

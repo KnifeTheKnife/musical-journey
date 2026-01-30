@@ -1,22 +1,224 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:musical_journey.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vlc="clr-namespace:LibVLCSharp.Avalonia;assembly=LibVLCSharp.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="musical_journey.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="musical_journey">
+        Icon="/Assets/musical_journey.ico"
+        Title="Musical Journey">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
+	<Design.DataContext>
+		<!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+	<!-- main grid -->
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="35"/>
+		</Grid.RowDefinitions>
+		<!-- audio -->
+		<vlc:VideoView Name="VideoPlayer" IsVisible="False" />
+    	<TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    <!-- Sample button for opening file picker
-    <Button Content="Browse Music Files" Command="{Binding BrowseMusicFilesCommand}" />-->
+		<!-- songs and info -->
+		<Grid Grid.Row="0">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="*"/>
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="1*"/>
+				<ColumnDefinition Width="1*"/>
+				<ColumnDefinition Width="1*"/>
+				<ColumnDefinition Width="2*"/>
+			</Grid.ColumnDefinitions>
 
+				<Border Grid.Column="0" Grid.Row="0" Background="DarkViolet" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+					<ScrollViewer>
+						<Grid x:Name="AlbumSpace">
+							<ItemsControl ItemsSource="{Binding AlbumFolders}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<WrapPanel Orientation="Vertical"></WrapPanel>
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<Button Content="{Binding Name}" Command="{Binding ClickCommand}" Margin="5"></Button>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</Grid>
+					</ScrollViewer>
+				</Border>
+
+			<Border Grid.Column="1" Grid.Row="0" Background="DarkMagenta" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+				<ScrollViewer>
+				<Grid RowDefinitions="Auto,*">
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5" Spacing="5">
+						<TextBlock Text="Songs" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+						<Button Name="AddAlbumBtn" Content="Add Album to Playlist" Command="{Binding AddAlbumToPlaylistCommand}" Padding="5" FontSize="10"/>
+					</StackPanel>
+					<ListBox Grid.Row="1" ItemsSource="{Binding AlbumGroups}" SelectedItem="{Binding SelectedAlbumGroup, Mode=TwoWay}">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<Expander Header="{Binding AlbumName}" Margin="5,2">
+									<ListBox ItemsSource="{Binding Songs}" 
+								SelectedItem="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SelectedSong, Mode=TwoWay}">
+										<ListBox.ItemTemplate>
+											<DataTemplate>
+												<StackPanel Margin="15,3,5,3">
+													<TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+													<TextBlock Text="{Binding Artist}" FontSize="10" Opacity="0.7"/>
+												</StackPanel>
+											</DataTemplate>
+										</ListBox.ItemTemplate>
+									</ListBox>
+								</Expander>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</Grid>
+				</ScrollViewer>
+			</Border>
+
+			<!-- Playlists -->
+			<Border Grid.Column="2" Grid.Row="0" Background="Indigo" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+				<Grid RowDefinitions="Auto,*">
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5" Spacing="5">
+						<TextBlock Text="Playlists" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+						<Button Name="CreatePlaylistBtn" Content="+" ToolTip.Tip="Create new playlist" Padding="5"/>
+						<Button Name="DeletePlaylistBtn" Content="-" ToolTip.Tip="Delete selected playlist" Padding="5" Command="{Binding DeletePlaylistCommand}"/>
+					</StackPanel>
+					
+					<ListBox Grid.Row="1" ItemsSource="{Binding Playlists}" SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}" Margin="5">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<StackPanel Margin="5,3">
+									<TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+									<TextBlock Text="{Binding Songs.Count, StringFormat='Songs: {0}'}" FontSize="10" Opacity="0.7"/>
+								</StackPanel>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</Grid>
+			</Border>
+
+			<Border Grid.Column="3" Grid.Row="0" Background="Magenta" Padding="10">
+				<TabControl>
+					<TabItem Header="Song Info">
+						<ScrollViewer>
+							<StackPanel Spacing="10">
+								<TextBlock Text="Song Information" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="Title:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongTitle}" TextWrapping="Wrap"/>
+								</StackPanel>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="Artist:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongArtist}" TextWrapping="Wrap"/>
+								</StackPanel>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="Album:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongAlbum}" TextWrapping="Wrap"/>
+								</StackPanel>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="Track Number:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongTrackNo}"/>
+								</StackPanel>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="Genre:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongGenre}" TextWrapping="Wrap"/>
+								</StackPanel>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="Year:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongDate}"/>
+								</StackPanel>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="Disc Number:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongDiscNo}"/>
+								</StackPanel>
+								
+								<StackPanel Spacing="5">
+									<TextBlock Text="File Path:" FontWeight="Bold"/>
+									<TextBlock Text="{Binding SelectedSongPath}" TextWrapping="Wrap" FontSize="10"/>
+								</StackPanel>
+
+								<Button Content="Add to Playlist" Command="{Binding AddSongToPlaylistCommand}" Margin="0,10,0,0"/>
+							</StackPanel>
+						</ScrollViewer>
+					</TabItem>
+					
+					<TabItem Header="Playlist Songs">
+						<Grid RowDefinitions="*,Auto">
+							<ListBox Grid.Row="0" ItemsSource="{Binding SelectedPlaylist.Songs}" SelectedItem="{Binding SelectedPlaylistSongDirect, Mode=TwoWay}" Margin="5">
+								<ListBox.ItemTemplate>
+									<DataTemplate>
+										<StackPanel Margin="5,3">
+											<TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+											<TextBlock Text="{Binding Artist}" FontSize="10" Opacity="0.7"/>
+										</StackPanel>
+									</DataTemplate>
+								</ListBox.ItemTemplate>
+							</ListBox>
+							<StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5" Spacing="5" HorizontalAlignment="Center">
+								<Button Content="Remove from Playlist" Command="{Binding RemoveSongFromPlaylistCommand}"/>
+								<Button Content="Clear Playlist" Command="{Binding ClearPlaylistCommand}"/>
+							</StackPanel>
+						</Grid>
+					</TabItem>
+				</TabControl>
+			</Border>
+			</Grid>
+
+	<!-- folder, play and slider -->
+	<Grid Grid.Row="1">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="35"/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="1*"/>
+			<ColumnDefinition Width="2*"/>
+			<ColumnDefinition Width="1*"/>
+		</Grid.ColumnDefinitions>
+
+			<Border Grid.Column="0" Grid.Row="0" Background="Goldenrod" Height="50">
+				<Button HorizontalAlignment="Center" Command="{Binding BrowseMusicFilesCommand}">Choose Folder</Button>
+				
+
+			</Border>
+			<Border Grid.Column="1" Grid.Row="0" Background="#1a1a1a" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="45">
+				<StackPanel VerticalAlignment="Center">
+					<Grid>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="5*"/>
+							<ColumnDefinition Width="1*"/>
+							<ColumnDefinition Width="5*"/>
+						</Grid.ColumnDefinitions>
+						<Button Grid.Column="0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).PreviousCommand}" HorizontalAlignment="Right">⇐</Button>
+					<Button Grid.Column="1" x:Name="playbutton" Command="{Binding PlayPauseCommand}" HorizontalAlignment="Center" VerticalAlignment="Center"></Button>
+						<Button Grid.Column="2" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NextCommand}" HorizontalAlignment="Left">⇒</Button>
+					</Grid>
+					<Slider Minimum="0" Maximum="1" Value="{Binding PlaybackPosition, Mode=TwoWay}" Margin="10,-5,10,5" Height="20"/>
+				</StackPanel>
+			</Border>
+		<Border Grid.Column="2" Grid.Row="0" Background="Goldenrod" Height="50">
+			<Grid ColumnDefinitions="Auto,*">
+			<TextBlock Text="Volume" VerticalAlignment="Center" Margin="5.0"/>
+			<Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Volume, Mode=TwoWay}" VerticalAlignment="Center" Margin="5.0"></Slider>
+			</Grid>
+		</Border>
+		</Grid></Grid>
+		
 </Window>
