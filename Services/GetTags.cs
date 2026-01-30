@@ -4,7 +4,7 @@ namespace musical_journey.Services;
 
 public class GetTag : IGetTags
 {
-    public Song GetTags(string Path)
+    public Song GetTagsByPath(string Path)
     {
         try
         {

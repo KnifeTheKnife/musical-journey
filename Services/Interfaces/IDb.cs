@@ -40,24 +40,27 @@ public interface IDb
     /// Inserts a song from table
     /// </summary>
     /// <param name="song">Song struct to insert</param>
-    void InsertSong(Song song);
+    /// <returns>0 if successful; -1 if failed because no path; -2 if failed because no metadata (at least song title)</returns>
+    int InsertSong(Song song);
 
     /// <summary>
     /// Select a song from table
     /// </summary>
-    /// <param name="SongName">Song name string</param>
+    /// <param name="SongTitle">Song title string</param>
     /// <returns>Song struct containing all song data</returns>
     Song SelectSongByTitle(string SongTitle);
 
     /// <summary>
-    /// Select songs by album name.
+    /// Select songs by album name
     /// </summary>
-    /// <param name="AlbumName">Album name string.</param>
-    /// <returns>List of Song structs.</returns>
+    /// <param name="AlbumName">Album name string</param>
+    /// <returns>List of Song structs</returns>
     List<Song> SelectSongsByAlbum(string AlbumName);
     /// <summary>
-    /// Scrapes metadata and then adds it to the database.
+    /// Scrapes metadata and then adds it to the database
     /// </summary>
-    /// <param name="SongName">Name of song to be added to the database.</param>
-    void InsertSongWrapper(string SongName);
+    /// <param name="SongPath">Path for song to be added to the database</param>
+    void InsertSongWrapper(string SongPath);
+
+    public void InsertSongList(List<Song> songs);
 }
