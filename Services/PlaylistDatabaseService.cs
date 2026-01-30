@@ -51,7 +51,7 @@ public class PlaylistDatabaseService : IPlaylistService
                 SongDate TEXT,
                 SongDiscNo TEXT,
                 SongPath TEXT NOT NULL,
-                FOREIGN KEY(PlaylistId) REFERENCES Playlists(Id) ON DELETE CASCADE,
+                FOREIGN KEY(PlaylistId) REFERENCES Playlists(Id),
                 PRIMARY KEY(PlaylistId, SongPath)
             )";
         command.ExecuteNonQuery();
