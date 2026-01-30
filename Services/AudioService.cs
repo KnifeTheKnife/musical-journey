@@ -1,7 +1,7 @@
 using System;
 using LibVLCSharp.Shared;
 
-namespace musical_journey.Services;
+namespace musical_journey.Services.Interfaces;
 
 public class AudioService : IAudioService, IDisposable
 {
