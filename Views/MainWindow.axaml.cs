@@ -23,7 +23,6 @@ public partial class MainWindow : Window
                 var vlcView = this.FindControl<VideoView>("VideoPlayer");
                 if (vlcView != null)
                 {
-                    // Access AudioService through PlaybackViewModel
                     vlcView.MediaPlayer = vm.PlaybackViewModel.AudioService.MediaPlayer;
                 }
                 
@@ -35,7 +34,6 @@ public partial class MainWindow : Window
                         var playlistName = await PromptForPlaylistName();
                         if (!string.IsNullOrWhiteSpace(playlistName))
                         {
-                            // Access CreatePlaylistCommand through PlaylistViewModel
                             vm.PlaylistViewModel.CreatePlaylistCommand.Execute(playlistName);
                         }
                     };

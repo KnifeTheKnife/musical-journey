@@ -44,12 +44,17 @@ Musical Journey to odtwarzacz muzyki oparty na technologii Avalonia UI dla platf
 ```xml
 <PackageReference Include="Avalonia" Version="11.x" />
 <PackageReference Include="Avalonia.ReactiveUI" Version="11.x" />
-<PackageReference Include="LibVLCSharp" Version="3.x" />
-<PackageReference Include="LibVLCSharp.Avalonia" Version="3.x" />
 <PackageReference Include="TagLibSharp" Version="2.x" />
 <PackageReference Include="Microsoft.Data.Sqlite" Version="8.x" />
 <PackageReference Include="ReactiveUI" Version="19.x" />
 ```
+### Zależności zewnętrzne
+
+Program używa jednej natywnej zależności zewnętrznej. Musi być zainstalowana na systemie by program funkcjonował.
+```
+LibVLCSharp
+```
+Może być ona zainstalowana osobno, lub wraz z programem VLC.
 
 ---
 
