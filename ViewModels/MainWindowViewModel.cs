@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Avalonia.Controls;
 using Avalonia.ReactiveUI;
 using ReactiveUI;
@@ -41,7 +41,7 @@ public class MainWindowViewModel : ViewModelBase
 
     #endregion
 
-    #region Convenience Properties (for easier code-behind migration)
+    #region Convenience Properties
 
     /// <summary>
     /// Direct access to AudioService for backward compatibility.
@@ -79,10 +79,9 @@ public class MainWindowViewModel : ViewModelBase
 
     /// <summary>
     /// Wire up connections and data flow between child ViewModels
-    /// </summary>
+    /// </summary>    
     private void WireViewModels()
     {
-        // When a song is selected in the library, update the playback ViewModel
         LibraryViewModel.WhenAnyValue(x => x.SelectedSong)
             .Subscribe(song =>
             {
@@ -92,7 +91,6 @@ public class MainWindowViewModel : ViewModelBase
                 }
             });
 
-        // Sync the library's song collection with playback's current playlist
         LibraryViewModel.Songs.CollectionChanged += (s, e) =>
         {
             PlaybackViewModel.CurrentPlaylist.Clear();
@@ -102,7 +100,6 @@ public class MainWindowViewModel : ViewModelBase
             }
         };
 
-        // Wire playlist ViewModel to library selections for adding songs
         LibraryViewModel.WhenAnyValue(x => x.SelectedSong)
             .Subscribe(song =>
             {
